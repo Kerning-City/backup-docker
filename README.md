@@ -41,11 +41,11 @@
 ```
 ---
 ## 🧩 프로젝트 아키텍쳐
-<img src="image-2.png" alt="이미지 설명" width="400" height="300">
+<img src="./images/image-2.png" alt="이미지 설명" width="400" height="300">
 
 ---
 
-## 1. Docker Compose 기반 실행 자동화
+# 1. Docker Compose 기반 실행 자동화
 Docker Compose를 통해 MySQL 및 Spring Boot 애플리케이션을 하나의 서비스로 묶어 컨테이너 기반 실행 자동화를 수행합니다.
 
 ---
@@ -150,102 +150,8 @@ docker-compose up -d
 
 <br>
 
-## 2. MySQL 데이터 주기적 백업 자동화
+# 2. MySQL 데이터 주기적 백업 자동화
 백업 스크립트와 `crontab`을 통해 일정 주기로 MySQL 데이터를 백업합니다.
-
-MySQL 데이터 주기적 백업 (폴더 복사 방식 + mysqldump 방식)
-✔️ 백업 로그 관리 및 상태 모니터링
-
-📂 프로젝트 구조
-
-.
-├── backup.sh                    # 물리 폴더 복사 백업 스크립트
-├── mysql_backup.sh              # mysqldump 백업 스크립트
-├── docker-compose.yaml          # Docker Compose 설정 파일
-├── dockerfile                   # Spring Boot 실행용 Dockerfile
-├── start.sh                     # 컨테이너 실행 스크립트
-└── step06_SpringDataJPA-0.0.1-SNAPSHOT.jar
-
-🏗️ 1단계 - Docker Compose 기반 실행 자동화
-
-🔖 docker-compose.yaml
-
-MySQL과 Spring Boot 애플리케이션의 실행 설정 파일입니다.
-
-version: "1.0"
-
-services:
-  db:
-    container_name: mysqldb
-    image: mysql:8.0
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: fisa
-      MYSQL_USER: user01
-      MYSQL_PASSWORD: user01
-    networks:
-      - spring-mysql-net
-    volumes:
-      - /mnt/mysql:/var/lib/mysql
-    healthcheck:
-      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u root --password=$${MYSQL_ROOT_PASSWORD} || exit 1']
-      interval: 10s
-      timeout: 2s
-      retries: 100
-
-  app:
-    container_name: springbootapp
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      MYSQL_HOST: db
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: fisa
-      MYSQL_USER: user01
-      MYSQL_PASSWORD: user01
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - spring-mysql-net
-
-networks:
-  spring-mysql-net:
-    driver: bridge
-
-✅ MySQL 데이터는 /mnt/mysql에 저장되어 컨테이너 재시작 시에도 유지됩니다.
-
-🔖 Dockerfile
-
-FROM openjdk:17-jdk-slim
-COPY step06_SpringDataJPA-0.0.1-SNAPSHOT.jar app.jar
-ENTRYPOINT ["java", "-jar", "/app.jar"]
-
-✅ Spring Boot 애플리케이션을 컨테이너에 간단히 배포 가능하도록 설정
-
-🔖 start.sh
-
-#!/bin/bash
-FILES=("docker-compose.yaml" "dockerfile" "step06_SpringDataJPA-0.0.1-SNAPSHOT.jar")
-
-for file in "${FILES[@]}"; do
-    if [[ ! -f "$file" ]]; then
-        echo "Error: '$file' not found."
-        exit 1
-    fi
-done
-
-echo "All required files are present. Starting Docker Compose..."
-docker-compose up -d
-
-✅ 필요한 파일 확인 후 Docker Compose 실행
-
-🔄 2단계 - MySQL 데이터 주기적 백업 자동화
 
 ## ✅ 방법 1: 볼륨 폴더 전체 복사 방식
 
@@ -360,7 +266,7 @@ mysql_20250321_114001  mysql_20250321_122001  mysql_20250321_130001  mysql_20250
 mysql_20250321_114501  mysql_20250321_122501  mysql_20250321_130501  mysql_20250321_134501
 mysql_20250321_115001  mysql_20250321_123001  mysql_20250321_131001  mysql_20250321_135001
 ```
-![alt text](image-3.png)
+<img src="./images/image-3.png">
 
 ### 🗒️ 파일 백업 결과
 
@@ -382,28 +288,5 @@ fisa_backup_2025-03-21_12-08-01.sql.gz  fisa_backup_2025-03-21_12-35-02.sql.gz  
 ```
 
 #### 생성된 sqldump 파일
-![alt text](image-4.png)
-![alt text](image-5.png)
-<!--
-
----
-
-## 🚧 Troubleshooting
-### 🛠️ **Docker Compose 실행 오류 발생 시**
-```bash
-docker-compose logs
-```
-→ 오류 내용 확인 후 수정  
-
-### 🛠️ **MySQL 접속 오류 발생 시**
-```bash
-docker exec -it mysqldb mysql -u root -p
-```
-→ 비밀번호 입력 후 설정 확인  
-
-### 🛠️ **백업 스크립트 오류 발생 시**
-```bash
-cat /var/log/backup.log
-```
-→ 오류 내용 확인  
--->
+<img src="./images/image-4.png">
+<img src="./images/image-5.png">
