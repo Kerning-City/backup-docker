@@ -39,8 +39,12 @@
 └── step06_SpringDataJPA-0.0.1-SNAPSHOT.jar
 ```
 ---
+## 🧩 프로젝트 아키텍쳐
+<img src="image.png" alt="이미지 설명" width="300" height="300">
 
-## 🏗️ 1단계 - Docker Compose 기반 실행 자동화
+---
+
+## 1. Docker Compose 기반 실행 자동화
 Docker Compose를 통해 MySQL 및 Spring Boot 애플리케이션을 하나의 서비스로 묶어 컨테이너 기반 실행 자동화를 수행합니다.
 
 ---
@@ -145,7 +149,7 @@ docker-compose up -d
 
 <br>
 
-## 🔄 2단계 - MySQL 데이터 주기적 백업 자동화
+## 2. MySQL 데이터 주기적 백업 자동화
 백업 스크립트와 `crontab`을 통해 일정 주기로 MySQL 데이터를 백업합니다.
 
 ---
