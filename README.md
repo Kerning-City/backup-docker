@@ -40,8 +40,7 @@
 ```
 ---
 ## 🧩 프로젝트 아키텍쳐
-<img src="image-1.png" alt="이미지 설명" width="400" height="300">
-
+<img src="image-2.png" alt="이미지 설명" width="400" height="300">
 ---
 
 ## 1. Docker Compose 기반 실행 자동화
