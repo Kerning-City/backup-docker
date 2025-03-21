@@ -17,7 +17,7 @@
 
 ## 📌 프로젝트 개요
 ✅ Docker Compose를 사용해 **MySQL 컨테이너**와 **Spring Boot 애플리케이션**을 동시에 실행  
-✅ `crontab`을 이용해 일정 주기로 MySQL 데이터를 백업 및 저장  
+✅ `crontab`을 이용해 일정 주기로 MySQL 데이터를 두 가지 방식으로 백업 및 저장  
 ✅ `bash script`로 백업 작업 자동화  
 ✅ 데이터 안정성 강화 및 확장성 확보  
 
@@ -25,8 +25,9 @@
 
 ## 🎯 주요 기능
 ✔️ Docker Compose 기반으로 MySQL + Spring Boot 실행 자동화  
-✔️ MySQL 데이터 정기적 백업 자동화  
+✔️ MySQL 데이터 주기적 백업 (폴더 복사 방식 + mysqldump 방식)  
 ✔️ 백업 상태 모니터링 가능  
+
 
 ---
 ## 📂 프로젝트 구조
@@ -41,6 +42,7 @@
 ---
 ## 🧩 프로젝트 아키텍쳐
 <img src="image-2.png" alt="이미지 설명" width="400" height="300">
+
 ---
 
 ## 1. Docker Compose 기반 실행 자동화
@@ -151,7 +153,102 @@ docker-compose up -d
 ## 2. MySQL 데이터 주기적 백업 자동화
 백업 스크립트와 `crontab`을 통해 일정 주기로 MySQL 데이터를 백업합니다.
 
----
+MySQL 데이터 주기적 백업 (폴더 복사 방식 + mysqldump 방식)
+✔️ 백업 로그 관리 및 상태 모니터링
+
+📂 프로젝트 구조
+
+.
+├── backup.sh                    # 물리 폴더 복사 백업 스크립트
+├── mysql_backup.sh              # mysqldump 백업 스크립트
+├── docker-compose.yaml          # Docker Compose 설정 파일
+├── dockerfile                   # Spring Boot 실행용 Dockerfile
+├── start.sh                     # 컨테이너 실행 스크립트
+└── step06_SpringDataJPA-0.0.1-SNAPSHOT.jar
+
+🏗️ 1단계 - Docker Compose 기반 실행 자동화
+
+🔖 docker-compose.yaml
+
+MySQL과 Spring Boot 애플리케이션의 실행 설정 파일입니다.
+
+version: "1.0"
+
+services:
+  db:
+    container_name: mysqldb
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fisa
+      MYSQL_USER: user01
+      MYSQL_PASSWORD: user01
+    networks:
+      - spring-mysql-net
+    volumes:
+      - /mnt/mysql:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u root --password=$${MYSQL_ROOT_PASSWORD} || exit 1']
+      interval: 10s
+      timeout: 2s
+      retries: 100
+
+  app:
+    container_name: springbootapp
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: fisa
+      MYSQL_USER: user01
+      MYSQL_PASSWORD: user01
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - spring-mysql-net
+
+networks:
+  spring-mysql-net:
+    driver: bridge
+
+✅ MySQL 데이터는 /mnt/mysql에 저장되어 컨테이너 재시작 시에도 유지됩니다.
+
+🔖 Dockerfile
+
+FROM openjdk:17-jdk-slim
+COPY step06_SpringDataJPA-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+
+✅ Spring Boot 애플리케이션을 컨테이너에 간단히 배포 가능하도록 설정
+
+🔖 start.sh
+
+#!/bin/bash
+FILES=("docker-compose.yaml" "dockerfile" "step06_SpringDataJPA-0.0.1-SNAPSHOT.jar")
+
+for file in "${FILES[@]}"; do
+    if [[ ! -f "$file" ]]; then
+        echo "Error: '$file' not found."
+        exit 1
+    fi
+done
+
+echo "All required files are present. Starting Docker Compose..."
+docker-compose up -d
+
+✅ 필요한 파일 확인 후 Docker Compose 실행
+
+🔄 2단계 - MySQL 데이터 주기적 백업 자동화
+
+## ✅ 방법 1: 볼륨 폴더 전체 복사 방식
+
 
 ### 🔖 **backup.sh**
 MySQL 데이터를 `/backup` 디렉토리에 일정 주기로 저장합니다.
@@ -189,6 +286,41 @@ echo "Backup completed: $DEST_DIR"
 
 ---
 
+## ✅ 방법 2: mysqldump 백업 스크립트 방식
+
+### 🔖 mysql_backup.sh
+
+```
+#!/bin/bash
+CONTAINER_NAME="mysqldb"
+DB_NAME="fisa"
+DB_USER="root"
+DB_PASSWORD="root"
+BACKUP_DIR="/home/ubuntu/mysql_backups"
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+
+mkdir -p $BACKUP_DIR
+docker exec $CONTAINER_NAME mysqldump -u$DB_USER -p$DB_PASSWORD --single-transaction --routines --triggers $DB_NAME > $BACKUP_DIR/${DB_NAME}_backup_${DATE}.sql
+gzip $BACKUP_DIR/${DB_NAME}_backup_${DATE}.sql
+echo "✅ 백업 완료: $BACKUP_DIR/${DB_NAME}_backup_${DATE}.sql.gz"
+```
+
+✅ mysqldump 방식으로 데이터베이스를 SQL 스크립트 형태로 백업 및 압축 저장
+
+### 🔖 crontab 설정 (1분마다 실행)
+
+```
+* * * * * bash /home/ubuntu/docker/mysql_backup.sh >> /var/log/mysql_backup.log 2>&1
+```
+
+## 🎉 ✅ 백업 방식 비교 요약
+
+|백업 방식|설명|사용 추천 환경|
+|---|---|---|
+|**볼륨 폴더 복사 방식**|실행 중지 후 물리 폴더 전체 복사|대용량 데이터, 빠른 복원이 필요한 경우|
+|**mysqldump 방식**|SQL 스크립트 형태로 백업 및 이식성 높음|무중단 서비스 운영 중, 타 서버 마이그레이션 및 정기 백업 상황에서 권장|
+
+
 ## 🚀 실행 코드
 ### 1. 도커 컴포즈 실행
 ```bash
@@ -202,7 +334,11 @@ crontab -e
 ```
 이후 다음 내용 추가:
 ```bash
+# 폴더 복사 백업:
 */5 * * * * bash /home/ubuntu/06.dockerCompose/backup.sh >> /var/log/backup.log 2>&1
+
+# mysqldump 백업:
+* * * * * bash /home/ubuntu/docker/mysql_backup.sh >> /var/log/mysql_backup.log 2>&1
 ```
 
 ### 3. crontab 실행 상태 확인
@@ -211,6 +347,8 @@ crontab -l
 ```
 ---
 ## 🎉 백업 실행 결과
+
+### 📂 폴더 백업 결과
 ```bash
 root@myserver1:/backup# ls
 mysql_20250321_111501  mysql_20250321_115501  mysql_20250321_123501  mysql_20250321_131501
@@ -222,8 +360,30 @@ mysql_20250321_114001  mysql_20250321_122001  mysql_20250321_130001  mysql_20250
 mysql_20250321_114501  mysql_20250321_122501  mysql_20250321_130501  mysql_20250321_134501
 mysql_20250321_115001  mysql_20250321_123001  mysql_20250321_131001  mysql_20250321_135001
 ```
+![alt text](image-3.png)
 
+### 🗒️ 파일 백업 결과
 
+#### ✅ .sql.gz 백업 파일 구성
+1. 데이터베이스 생성 명령문
+2. 테이블 생성 SQL 스크립트
+3. 모든 데이터 INSERT 쿼리
+4. 인덱스, 트리거, 제약조건 정보
+5. (옵션 시) 뷰 및 저장 프로시저 포함
+
+#### 생성되는 백업 파일 목록
+```
+ubuntu@myserver01:~/mysql_backups$ ls
+fisa_backup_2025-03-21_12-0             fisa_backup_2025-03-21_12-32-01.sql.gz  fisa_backup_2025-03-21_13-50-01.sql.gz
+fisa_backup_2025-03-21_12-06-01.sql.gz  fisa_backup_2025-03-21_12-33-01.sql.gz  fisa_backup_2025-03-21_13-51-01.sql.gz
+fisa_backup_2025-03-21_12-07-01.sql.gz  fisa_backup_2025-03-21_12-34-02.sql.gz  fisa_backup_2025-03-21_13-52-01.sql.gz
+fisa_backup_2025-03-21_12-08-01.sql.gz  fisa_backup_2025-03-21_12-35-02.sql.gz  fisa_backup_2025-03-21_13-53-01.sql.gz
+...
+```
+
+#### 생성된 sqldump 파일
+![alt text](image-4.png)
+![alt text](image-5.png)
 <!--
 
 ---
