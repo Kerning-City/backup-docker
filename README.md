@@ -1,4 +1,4 @@
-### 🚀 Docker Compose 기반 MySQL 데이터 백업 자동화 프로젝트
+## 🚀 Docker Compose 기반 MySQL 데이터 백업 자동화 프로젝트
 
 이 프로젝트는 **Docker Compose**를 사용해 **MySQL 컨테이너**와 **Spring Boot 애플리케이션**을 함께 실행하고, 일정 주기마다 MySQL 데이터를 백업하도록 자동화하는 과정을 정리합니다.  
 개발 및 배포 과정에서 발생할 수 있는 이슈를 최소화하고, 데이터 안정성과 지속 가능성을 강화하기 위해 Docker 및 스크립트를 효율적으로 활용합니다.
@@ -213,21 +213,15 @@ crontab -l
 ---
 ## 🎉 백업 실행 결과
 ```bash
-root@myserver1:/home/ubuntu/06.dockerCompose# cat /var/log/backup.log
-/bin/sh: 1: /home/ubuntu/06.dockerCompose/backup.sh: Permission denied
-Backup completed: /backup/mysql_20250321_111501
-Backup completed: /backup/mysql_20250321_112001
-Backup completed: /backup/mysql_20250321_112501
-Backup completed: /backup/mysql_20250321_113001
-Backup completed: /backup/mysql_20250321_113501
-Backup completed: /backup/mysql_20250321_114001
-Backup completed: /backup/mysql_20250321_114501
-Backup completed: /backup/mysql_20250321_115001
-Backup completed: /backup/mysql_20250321_115501
-Backup completed: /backup/mysql_20250321_120001
-Backup completed: /backup/mysql_20250321_120501
-Backup completed: /backup/mysql_20250321_121001
-Backup completed: /backup/mysql_20250321_121501
+root@myserver1:/backup# ls
+mysql_20250321_111501  mysql_20250321_115501  mysql_20250321_123501  mysql_20250321_131501
+mysql_20250321_112001  mysql_20250321_120001  mysql_20250321_124001  mysql_20250321_132001
+mysql_20250321_112501  mysql_20250321_120501  mysql_20250321_124501  mysql_20250321_132501
+mysql_20250321_113001  mysql_20250321_121001  mysql_20250321_125001  mysql_20250321_133001
+mysql_20250321_113501  mysql_20250321_121501  mysql_20250321_125501  mysql_20250321_133501
+mysql_20250321_114001  mysql_20250321_122001  mysql_20250321_130001  mysql_20250321_134001
+mysql_20250321_114501  mysql_20250321_122501  mysql_20250321_130501  mysql_20250321_134501
+mysql_20250321_115001  mysql_20250321_123001  mysql_20250321_131001  mysql_20250321_135001
 ```
 
 
