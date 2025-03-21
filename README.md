@@ -40,7 +40,7 @@
 ```
 ---
 ## 🧩 프로젝트 아키텍쳐
-<img src="image.png" alt="이미지 설명" width="300" height="300">
+<img src="image-1.png" alt="이미지 설명" width="400" height="300">
 
 ---
 
