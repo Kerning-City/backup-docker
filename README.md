@@ -1,6 +1,6 @@
-## 🚀 Docker Compose 기반 MySQL 데이터 백업 자동화 프로젝트
+# 🚀 Docker Compose 기반 MySQL 데이터 백업 자동화 프로젝트
 
-이 프로젝트는 **Docker Compose**를 사용해 **MySQL 컨테이너**와 **Spring Boot 애플리케이션**을 함께 실행하고, 일정 주기마다 MySQL 데이터를 백업하도록 자동화하는 과정을 정리합니다.  
+**Docker Compose**를 사용해 **MySQL 컨테이너**와 **Spring Boot 애플리케이션**을 함께 실행하고, 일정 주기마다 MySQL 데이터를 백업하도록 자동화하는 과정을 정리합니다.  
 개발 및 배포 과정에서 발생할 수 있는 이슈를 최소화하고, 데이터 안정성과 지속 가능성을 강화하기 위해 Docker 및 스크립트를 효율적으로 활용합니다.
 
 ---
@@ -26,7 +26,7 @@
 ## 🎯 주요 기능
 ✔️ Docker Compose 기반으로 MySQL + Spring Boot 실행 자동화  
 ✔️ MySQL 데이터 주기적 백업 (폴더 복사 방식 + mysqldump 방식)  
-✔️ 백업 상태 모니터링 가능  
+✔️ 백업 상태 모니터링
 
 
 ---
@@ -41,11 +41,11 @@
 ```
 ---
 ## 🧩 프로젝트 아키텍쳐
-<img src="./images/image-2.png" alt="이미지 설명" width="400" height="300">
+<img src="./images/image-2.png">
 
 ---
 
-# 1. Docker Compose 기반 실행 자동화
+## 1. Docker Compose 기반 MySQL, Spring Boot 실행 자동화
 Docker Compose를 통해 MySQL 및 Spring Boot 애플리케이션을 하나의 서비스로 묶어 컨테이너 기반 실행 자동화를 수행합니다.
 
 ---
@@ -150,10 +150,12 @@ docker-compose up -d
 
 <br>
 
-# 2. MySQL 데이터 주기적 백업 자동화
+## 2. MySQL 데이터 주기적 백업
 백업 스크립트와 `crontab`을 통해 일정 주기로 MySQL 데이터를 백업합니다.
+1. 볼륨 폴더 전제 복사
+2. mysqldump 백업 스크립트
 
-## ✅ 방법 1: 볼륨 폴더 전체 복사 방식
+### ✅ 방법 1: 볼륨 폴더 전체 복사 방식
 
 
 ### 🔖 **backup.sh**
@@ -192,6 +194,20 @@ echo "Backup completed: $DEST_DIR"
 
 ---
 
+### 📂 폴더 백업 결과
+```bash
+root@myserver1:/backup# ls
+mysql_20250321_111501  mysql_20250321_115501  mysql_20250321_123501  mysql_20250321_131501
+mysql_20250321_112001  mysql_20250321_120001  mysql_20250321_124001  mysql_20250321_132001
+mysql_20250321_112501  mysql_20250321_120501  mysql_20250321_124501  mysql_20250321_132501
+mysql_20250321_113001  mysql_20250321_121001  mysql_20250321_125001  mysql_20250321_133001
+mysql_20250321_113501  mysql_20250321_121501  mysql_20250321_125501  mysql_20250321_133501
+mysql_20250321_114001  mysql_20250321_122001  mysql_20250321_130001  mysql_20250321_134001
+mysql_20250321_114501  mysql_20250321_122501  mysql_20250321_130501  mysql_20250321_134501
+mysql_20250321_115001  mysql_20250321_123001  mysql_20250321_131001  mysql_20250321_135001
+```
+<img src="./images/image-3.png">
+
 ## ✅ 방법 2: mysqldump 백업 스크립트 방식
 
 ### 🔖 mysql_backup.sh
@@ -219,55 +235,6 @@ echo "✅ 백업 완료: $BACKUP_DIR/${DB_NAME}_backup_${DATE}.sql.gz"
 * * * * * bash /home/ubuntu/docker/mysql_backup.sh >> /var/log/mysql_backup.log 2>&1
 ```
 
-## 🎉 ✅ 백업 방식 비교 요약
-
-|백업 방식|설명|사용 추천 환경|
-|---|---|---|
-|**볼륨 폴더 복사 방식**|실행 중지 후 물리 폴더 전체 복사|대용량 데이터, 빠른 복원이 필요한 경우|
-|**mysqldump 방식**|SQL 스크립트 형태로 백업 및 이식성 높음|무중단 서비스 운영 중, 타 서버 마이그레이션 및 정기 백업 상황에서 권장|
-
-
-## 🚀 실행 코드
-### 1. 도커 컴포즈 실행
-```bash
-chmod +x start.sh
-./start.sh
-```
-
-### 2. crontab 설정
-```bash
-crontab -e
-```
-이후 다음 내용 추가:
-```bash
-# 폴더 복사 백업:
-*/5 * * * * bash /home/ubuntu/06.dockerCompose/backup.sh >> /var/log/backup.log 2>&1
-
-# mysqldump 백업:
-* * * * * bash /home/ubuntu/docker/mysql_backup.sh >> /var/log/mysql_backup.log 2>&1
-```
-
-### 3. crontab 실행 상태 확인
-```bash
-crontab -l
-```
----
-## 🎉 백업 실행 결과
-
-### 📂 폴더 백업 결과
-```bash
-root@myserver1:/backup# ls
-mysql_20250321_111501  mysql_20250321_115501  mysql_20250321_123501  mysql_20250321_131501
-mysql_20250321_112001  mysql_20250321_120001  mysql_20250321_124001  mysql_20250321_132001
-mysql_20250321_112501  mysql_20250321_120501  mysql_20250321_124501  mysql_20250321_132501
-mysql_20250321_113001  mysql_20250321_121001  mysql_20250321_125001  mysql_20250321_133001
-mysql_20250321_113501  mysql_20250321_121501  mysql_20250321_125501  mysql_20250321_133501
-mysql_20250321_114001  mysql_20250321_122001  mysql_20250321_130001  mysql_20250321_134001
-mysql_20250321_114501  mysql_20250321_122501  mysql_20250321_130501  mysql_20250321_134501
-mysql_20250321_115001  mysql_20250321_123001  mysql_20250321_131001  mysql_20250321_135001
-```
-<img src="./images/image-3.png">
-
 ### 🗒️ 파일 백업 결과
 
 #### ✅ .sql.gz 백업 파일 구성
@@ -290,3 +257,64 @@ fisa_backup_2025-03-21_12-08-01.sql.gz  fisa_backup_2025-03-21_12-35-02.sql.gz  
 #### 생성된 sqldump 파일
 <img src="./images/image-4.png">
 <img src="./images/image-5.png">
+
+## 🎉 ✅ 백업 방식 비교 요약
+
+|백업 방식|설명|사용 추천 환경|
+|---|---|---|
+|**볼륨 폴더 복사 방식**|실행 중지 후 물리 폴더 전체 복사|대용량 데이터, 빠른 복원이 필요한 경우|
+|**mysqldump 방식**|SQL 스크립트 형태로 백업 및 이식성 높음|무중단 서비스 운영 중, 타 서버 마이그레이션 및 정기 백업 상황에서 권장|
+
+
+## 🚀 실행
+### 1. 도커 컴포즈 실행
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+### 2. crontab 설정
+```bash
+crontab -e
+```
+
+#### 2-1. 폴더 복사 백업:
+```bash
+*/5 * * * * bash /home/ubuntu/06.dockerCompose/backup.sh >> /var/log/backup.log 2>&1
+```
+
+#### 2-2. mysqldump 백업:
+```bash
+* * * * * bash /home/ubuntu/docker/mysql_backup.sh >> /var/log/mysql_backup.log 2>&1
+```
+
+### 3. crontab 실행 상태 확인
+```bash
+crontab -l
+```
+---
+
+
+## 📝 고찰
+처음에는 컨테이너의 볼륨을 마운트한 폴더를 전체 복사하는 방식으로 백업을 진행했습니다. 하지만 MySQL이 실행 중일 때 폴더 전체를 복사하면 트랜잭션 중간 상태가 포함되어 일관성 문제가 발생할 수 있고, 복원 시 오류가 발생할 위험이 있다는 점을 확인했습니다.
+
+또한, 물리적 폴더 복사 방식은 주기적으로 백업할 경우 스토리지 공간을 매우 빠르게 소모하는 단점이 있었습니다.
+
+최종적으로 mysqldump 방식을 선택하여 주기적으로 SQL 스크립트 형태로 백업하도록 변경했습니다. 이 방식은 백업 파일 크기가 비교적 작고, 다른 환경으로의 이식성과 복원 안정성이 높아 유지 관리 측면에서도 적합하다고 판단했습니다.
+
+### ⚠️ 무중단 물리적 백업 방식
+> MySQL의 물리 데이터를 안정적으로 백업하기 위해 **Percona XtraBackup** 또는 **MySQL Enterprise Backup** 과 같은 무중단(Hot Backup) 솔루션을 사용합니다.
+
+#### 1. Percona XtraBackup
+
+- MySQL이 실행 중인 상태에서도 물리적 데이터 파일과 트랜잭션 로그를 안전하게 백업할 수 있도록 설계된 오픈소스 도구입니다.
+대규모 데이터베이스 환경에서 무중단 백업과 빠른 복원이 가능하며, 증분 및 차등 백업도 지원합니다.
+
+#### 2. MySQL Enterprise Backup
+
+- Oracle 공식 유료 솔루션으로, 무중단 물리 백업 및 자동 복원 기능을 지원합니다.
+고가용성 환경과 금융권 및 대규모 트랜잭션 처리 시스템에서 사용됩니다.
+
+👉 대규모 실무 환경에서는 이러한 전문 백업 솔루션을 통해 일관성과 가용성을 보장하며, 주간 Full 백업 + 일간 증분 백업 조합으로 백업 전략을 구축하는 것이 일반적입니다.
+
+
